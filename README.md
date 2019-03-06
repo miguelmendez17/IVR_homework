@@ -15,28 +15,20 @@ Or you can use your own configurations, but you need to change this in settings.
 How to run the project
 ------------
 
+
 Before start install requirements and run migrations:
 
     pip install -r requirements.txt
+    python manage.py makemigrations
     python manage.py migrate
 
-Try to import the registry.
+We need to create a super user:
 
-Download from http://www.tse.go.cr/zip/padron/padron_completo.zip the complete registry file
-Unzip the file and run
-
-:warning:   Do not open the file 'PADRON_ELECTORAL_COMPLETO.txt', computer could freeze.
-
-::
-
-   python manage.py  importregistry  <registry path> <diselect path>
-
-
-
+    python manage.py createsuperuser
+    
+Here, we need to define an username, email (optional) and password.
 
 To run
 --------
 
-::
-
-   python manage.py runserver
+    python manage.py runserver

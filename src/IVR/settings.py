@@ -15,7 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
@@ -25,8 +24,8 @@ SECRET_KEY = 'z_3fq3%4e$pbko8@-96h8wcrj-vt)4vlhk@n73vl7in=kpxpoc'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# only localhost in this project
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -47,12 +46,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
 
+    # payment api
     'stripe',
+
+    # local app
     'ivr_app'
 ]
 
 SITE_ID = 1
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -103,13 +104,12 @@ REST_FRAMEWORK = {
     )
 }
 
-
 WSGI_APPLICATION = 'IVR.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+# this DB configurations can be changed if necessary
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -122,10 +122,8 @@ DATABASES = {
 }
 
 # Stripe payments config
-STRIPE_SECRET_KEY = ''
+STRIPE_SECRET_KEY = 'sk_test_vlBo3log3zJek3BElEVkO68f'
 STRIPE_PUBLISHABLE_KEY = 'pk_test_V7LgVDpazD1fjfd5elAaOjWS'
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -145,7 +143,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -158,7 +155,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
