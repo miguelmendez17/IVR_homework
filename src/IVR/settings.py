@@ -90,12 +90,17 @@ AUTHENTICATION_BACKENDS = (
 
 )
 
+# authentications
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #    'rest_framework.permissions.IsAuthenticated',
+    # ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        #  'rest_framework.authentication.TokenAuthentication',
+
+    )
 }
 
 
@@ -107,14 +112,17 @@ WSGI_APPLICATION = 'IVR.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'ivr',
+        'USER': 'miguelmendez',
+        'PASSWORD': 'm1gu3l123.',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
-
 # Stripe payments config
-STRIPE_SECRET_KEY = 'sk_test_vlBo3log3zJek3BElEVkO68f'
+STRIPE_SECRET_KEY = ''
 STRIPE_PUBLISHABLE_KEY = 'pk_test_V7LgVDpazD1fjfd5elAaOjWS'
 
 
