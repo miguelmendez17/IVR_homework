@@ -1,4 +1,5 @@
 # Create your views here.
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import stripe
@@ -28,55 +29,59 @@ class PaymentView(APIView):
         # we need to try to create a token and create a charge.
         # If there is a problem, it will enter to the corresponding except
         try:
+            # variable to verify that the request is correct.
+            serializer = CardSerializer(data=request.data)
+            # when the fields are not complete
+            if serializer.is_valid():
+                create_request_info(request.data)
+            # if the request is invalid a log is created and the error response is given
+            else:
+                # this tuple is to save the missing fields in the request.
+                empty_fields = ()
+                for key in request.data:
+                    if request.data[key] is "":
+                        empty_fields = (*empty_fields, key)
+                error = {'message': 'All the fields should be complete. Missing %s' % str(empty_fields),
+                         'code': 'Bad request', 'status': status.HTTP_400_BAD_REQUEST, 'username': actual_user}
+                save_error = CardError(**error)
+                save_error.save()
+                return Response({'Error': error['message']}, status=error['status'])
+
             # Here, we can create the token
             token = stripe.Token.create(card={
-                "number": request.data['cc_num'],
-                "exp_month": request.data['exp_month'],
-                "exp_year": request.data['exp_year'],
-                "cvc": request.data['cvc']
+                "number": request.POST.get('cc_num'),
+                "exp_month": request.POST.get('exp_month'),
+                "exp_year": request.POST.get('exp_year'),
+                "cvc": request.POST.get('cvc')
             })
 
             charge = stripe.Charge.create(
-                amount=request.data['amount'],
+                amount=request.POST.get('amount'),
                 currency="usd",
                 source=str(token.id),  # obtained with the previous variable
-                description=request.data['description']
+                description=request.POST.get('description')
             )
 
             # These two functions are to save the successful logs in the corresponding table
             create_response_info(charge)
-            create_request_info(request.data)
 
             return Response({'Success': 'The transactions were successful, '
                                         'the corresponding logs were saved in the database '
                                         'with the most interesting information to know.'})
 
-        except stripe.error.CardError as e:
-            # Since it's a decline, stripe.error.CardError will be caught
-            # This error occurs when the data entered is incorrect
-            error = create_dict_error(e, actual_user)
-        except stripe.error.RateLimitError as e:
-            # This happens when the waiting time extends more than normal
-            error = create_dict_error(e, actual_user)
-        except stripe.error.InvalidRequestError as e:
-            # When the request is invalid
-            error = create_dict_error(e, actual_user)
-        except stripe.error.AuthenticationError as e:
-            # Error with the auth
-            error = create_dict_error(e, actual_user)
-        except stripe.error.APIConnectionError as e:
-            # Connection error with the Strip api
-            error = create_dict_error(e, actual_user)
-        except stripe.error.StripeError as e:
-            # Display a very generic error to the user, and maybe send
-            # yourself an email
+        except (stripe.error.CardError, stripe.error.RateLimitError,
+                stripe.error.InvalidRequestError, stripe.error.AuthenticationError,
+                stripe.error.APIConnectionError, stripe.error.StripeError) as e:
+            # This error occurs when the data entered is incorrect or
+            # or when there is a stripe exception
             error = create_dict_error(e, actual_user)
         except Exception as e:
             # This log will not be saved in the database because we
-            # do not know the structure, we only know that it is an unexpected error urelated to stripe
-            return Response({'Error': 'Error completely unrelated to Stripe'})
+            # do not know the structure, we only know that it is an unexpected error unrelated to stripe
+            return Response({'Error': 'Error completely unrelated to Stripe'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({'Error': error})
+        return Response({'Error': error}, status=error['status'])
 
 
 def create_dict_error(e, actual_user):
@@ -116,9 +121,9 @@ def create_request_info(data):
     :param data: this is the data that we need to save in the DB
     :return: Save the data in the DB
     """
-    cc_num = data['cc_num']
+    cc_num = data.get('cc_num')
     cc_num_masked = cc_num[-4:].rjust(len(cc_num), "X")
     card_dict = {'cc_num': cc_num_masked, 'cvc': "XXX", 'exp_month': data['exp_month'],
-                 'exp_year': data['exp_year'], 'amount': data['amount'], 'description': data['description']}
+                 'exp_year': data.get('exp_year'), 'amount': data.get('amount'), 'description': data.get('description')}
     save_request = Card(**card_dict)
     save_request.save()
