@@ -32,7 +32,7 @@ class CardError(models.Model):
 
     """
     # this is the error message
-    message = models.CharField(max_length=500)
+    message = models.CharField(max_length=2000)
     # error status. (200, 400, ..., etc)
     status = models.IntegerField()
     # error code

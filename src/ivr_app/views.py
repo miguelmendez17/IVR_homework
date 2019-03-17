@@ -33,33 +33,33 @@ class PaymentView(APIView):
             serializer = CardSerializer(data=request.data)
             # when the fields are not complete
             if serializer.is_valid():
-                create_request_info(request.data)
+                create_request_info(request)
             # if the request is invalid a log is created and the error response is given
             else:
-                # this tuple is to save the missing fields in the request.
-                empty_fields = ()
-                for key in request.data:
-                    if request.data[key] is "":
-                        empty_fields = (*empty_fields, key)
-                error = {'message': 'All the fields should be complete. Missing %s' % str(empty_fields),
-                         'code': 'Bad request', 'status': status.HTTP_400_BAD_REQUEST, 'username': actual_user}
+                required_fields = ()
+                for error in serializer.errors:
+                    required_fields = (*required_fields, error)
+                message = ('You have error in these parameters %s . You need to check if you are sending '
+                           'those parameters or you are sending them empty' % str(required_fields))
+                error = {'message': message, 'code': 'Bad request', 'status': status.HTTP_400_BAD_REQUEST,
+                         'username': actual_user}
                 save_error = CardError(**error)
                 save_error.save()
                 return Response({'Error': error['message']}, status=error['status'])
 
             # Here, we can create the token
             token = stripe.Token.create(card={
-                "number": request.POST.get('cc_num'),
-                "exp_month": request.POST.get('exp_month'),
-                "exp_year": request.POST.get('exp_year'),
-                "cvc": request.POST.get('cvc')
+                "number": request.data['cc_num'],
+                "exp_month": request.data['exp_month'],
+                "exp_year": request.data['exp_year'],
+                "cvc": request.data['cvc']
             })
 
             charge = stripe.Charge.create(
-                amount=request.POST.get('amount'),
+                amount=request.data['amount'],
                 currency="usd",
                 source=str(token.id),  # obtained with the previous variable
-                description=request.POST.get('description')
+                description=request.data['description']
             )
 
             # These two functions are to save the successful logs in the corresponding table
@@ -115,15 +115,16 @@ def create_response_info(response):
     save_response.save()
 
 
-def create_request_info(data):
+def create_request_info(request):
     """
     This function is to create a request dictionary and save into the DB.
     :param data: this is the data that we need to save in the DB
     :return: Save the data in the DB
     """
-    cc_num = data.get('cc_num')
+    cc_num = request.data['cc_num']
     cc_num_masked = cc_num[-4:].rjust(len(cc_num), "X")
-    card_dict = {'cc_num': cc_num_masked, 'cvc': "XXX", 'exp_month': data['exp_month'],
-                 'exp_year': data.get('exp_year'), 'amount': data.get('amount'), 'description': data.get('description')}
+    card_dict = {'cc_num': cc_num_masked, 'cvc': "XXX", 'exp_month': request.data['exp_month'],
+                 'exp_year': request.data['exp_year'], 'amount': request.data['amount'],
+                 'description': request.data['description']}
     save_request = Card(**card_dict)
     save_request.save()
